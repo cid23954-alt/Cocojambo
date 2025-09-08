@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>IELTS Speaking Randomizer – Full B2–C1</title>
+<style>
+:root{
+  --bg:#0f172a; --card:#111827; --ink:#e5e7eb; --muted:#9ca3af; --accent:#22c55e; --surface:#0b1220; --border:#1f2937;
+}
+@media (prefers-color-scheme: light) {
+  :root{ --bg:#f8fafc; --card:#ffffff; --ink:#0f172a; --muted:#475569; --accent:#0ea5e9; --surface:#eef2f7; --border:#e5e7eb; }
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,var(--surface),var(--bg));color:var(--ink);-webkit-font-smoothing:antialiased;}
+header{padding:20px;text-align:center}
+h1{margin:0;font-size:clamp(20px,3vw,28px)}
+.sub{color:var(--muted);font-size:13px;margin-top:6px}
+.wrap{max-width:1000px;margin:18px auto;padding:12px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0}
+button,label{background:var(--card);color:var(--ink);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:700}
+button:hover{transform:translateY(-2px);border-color:var(--accent)}
+.grid{display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:920px){.grid{grid-template-columns:2fr 1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.card h2{margin:0 0 10px;font-size:16px}
+.pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
+.list{padding-left:16px;margin:6px 0}
+.q{margin:8px 0}
+.cue{background:rgba(127,127,127,.05);border:1px dashed var(--border);padding:10px;border-radius:8px;min-height:72px}
+.muted{color:var(--muted);font-size:13px}
+.time{font-variant-numeric:tabular-nums;font-size:18px;font-weight:800;padding:6px 10px;border-radius:8px}
+.timer-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.small{font-size:13px}
+.hidden{display:none !important}
+.foot{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
+.copy-ok{color:#10b981}
+</style>
+</head>
+<body>
+<header>
+  <h1>IELTS Speaking Randomizer — Full B2–C1</h1>
+  <div class="sub">Random set: Part 1, Part 2, Part 3 + keywords, functional language & grammar. One theme per part.</div>
+</header>
+
+<div class="wrap">
+  <div class="toolbar">
+    <button id="newSetBtn">🎲 New Set</button>
+    <button id="copyBtn">📋 Copy Set</button>
+    <button id="printBtn">🖨️ Print</button>
+    <label style="display:inline-flex;align-items:center;gap:8px"><input id="examMode" type="checkbox" /> <span class="small">Exam mode</span></label>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Part 1 — Introduction & Interview <span class="pill">5 questions</span></h2>
+      <div id="part1" class="list"></div>
+      <div id="p1hint" class="muted small">Use 2–4 short sentences; include keywords.</div>
+    </div>
+
+    <div class="card">
+      <h2>Band-7 Functional Language & Grammar</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <h3 style="margin:6px 0 8px;font-size:14px">Functional language</h3>
+          <div id="funcLang" class="list"></div>
+        </div>
+        <div>
+          <h3 style="margin:6px 0 8px;font-size:14px">Grammar chunks</h3>
+          <div id="grammarChunks" class="list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Part 2 — Long turn (Cue Card) <span class="pill">1 min prep / 2 min talk</span></h2>
+      <div id="part2" class="cue"></div>
+
+      <div class="timer-controls">
+        <div id="timerDisplay" class="time">—:—</div>
+        <button id="startPrep">▶️ Start Prep</button>
+        <button id="startTalk">▶️ Start Talk</button>
+        <button id="resetTimer">↺ Reset Timer</button>
+      </div>
+      <div id="p2hint" class="muted small" style="margin-top:8px">Prep: plan 2–3 ideas. Structure: context → details → reflection.</div>
+    </div>
+
+    <div class="card">
+      <h2>Part 3 — Discussion <span class="pill">5 questions</span></h2>
+      <div id="part3" class="list"></div>
+      <div id="p3hint" class="muted small">Develop answer: claim, reason, example, mini-conclusion. Use functional language.</div>
+    </div>
+  </div>
+
+  <div class="foot">Built for Band 7.0+ practice. Tap «New Set» to generate a fresh random set.</div>
+</div>
+
+<script>
+// ---------------- helpers ----------------
+const $ = s => document.querySelector(s);
+const rnd = n => Math.floor(Math.random()*n);
+const pickMany = (arr, n) => {
+  const a = arr.slice(); const out = [];
+  while (out.length < n && a.length) out.push(a.splice(rnd(a.length),1)[0]);
+  return out;
+};
+
+// ---------------- DATA ----------------
+// Part 1 — 21 topics (each has 5 questions, 2 keywords per question)
+const PART1 = [
+  {topic:"Hometown", qs:[
+    {q:"Where did you grow up?", keywords:["city","landscape"]},
+    {q:"What do you like most about your hometown?", keywords:["culture","people"]},
+    {q:"Has your hometown changed in recent years?", keywords:["development","population"]},
+    {q:"Would you like to live there in the future?", keywords:["housing","opportunities"]},
+    {q:"What is your favourite place there?", keywords:["park","restaurant"]}
+  ]},
+  {topic:"Work/Study", qs:[
+    {q:"Do you work or are you a student?", keywords:["job","university"]},
+    {q:"Why did you choose this subject/role?", keywords:["interest","career"]},
+    {q:"What skills are most useful?", keywords:["communication","management"]},
+    {q:"What is challenging about your work/studies?", keywords:["deadline","stress"]},
+    {q:"What are your future plans in this area?", keywords:["promotion","further study"]}
+  ]},
+  {topic:"Daily routine", qs:[
+    {q:"Describe a typical weekday for you.", keywords:["morning","evening"]},
+    {q:"Which part of the day do you prefer?", keywords:["afternoon","night"]},
+    {q:"How do you try to stay productive?", keywords:["planning","focus"]},
+    {q:"Do you have any meals or rituals?", keywords:["breakfast","habit"]},
+    {q:"How do you relax after work/study?", keywords:["exercise","hobby"]}
+  ]},
+  {topic:"Reading", qs:[
+    {q:"What kinds of books do you enjoy?", keywords:["fiction","non-fiction"]},
+    {q:"Do you prefer e-books or printed books?", keywords:["digital","paper"]},
+    {q:"When do you usually read?", keywords:["night","commute"]},
+    {q:"Has your reading changed since childhood?", keywords:["taste","frequency"]},
+    {q:"Who is your favourite author?", keywords:["writer","style"]}
+  ]},
+  {topic:"Free time", qs:[
+    {q:"What do you usually do in your free time?", keywords:["hobby","friends"]},
+    {q:"Do you prefer being alone or with others?", keywords:["solitude","company"]},
+    {q:"Is there any hobby you'd like to try?", keywords:["learn","challenge"]},
+    {q:"How do you balance leisure and responsibilities?", keywords:["schedule","priority"]},
+    {q:"Do you spend time outdoors?", keywords:["nature","park"]}
+  ]},
+  {topic:"Food", qs:[
+    {q:"What is a dish you often cook or order?", keywords:["ingredients","recipe"]},
+    {q:"How important is healthy eating to you?", keywords:["nutrition","habit"]},
+    {q:"Do you enjoy trying new cuisines?", keywords:["variety","experiment"]},
+    {q:"Has your diet changed recently?", keywords:["health","choice"]},
+    {q:"Describe a traditional meal from your culture.", keywords:["celebration","custom"]}
+  ]},
+  {topic:"Travel", qs:[
+    {q:"Do you enjoy travelling? Why?", keywords:["adventure","culture"]},
+    {q:"What kind of places do you like to visit?", keywords:["beach","mountain"]},
+    {q:"Do you prefer planning trips or being spontaneous?", keywords:["itinerary","flexibility"]},
+    {q:"What is a memorable trip you have taken?", keywords:["memory","companions"]},
+    {q:"Would you rather travel alone or with friends?", keywords:["company","solitude"]}
+  ]},
+  {topic:"Technology", qs:[
+    {q:"Which app do you use the most?", keywords:["phone","software"]},
+    {q:"How has technology changed your daily life?", keywords:["convenience","efficiency"]},
+    {q:"Is there any tech you find frustrating?", keywords:["bug","update"]},
+    {q:"Do people depend on technology too much?", keywords:["addiction","necessity"]},
+    {q:"What future technology excites you?", keywords:["AI","innovation"]}
+  ]},
+  {topic:"Music", qs:[
+    {q:"What kind of music do you listen to?", keywords:["genre","preference"]},
+    {q:"Do you prefer live concerts or streaming?", keywords:["concert","streaming"]},
+    {q:"Has your taste in music changed?", keywords:["age","influence"]},
+    {q:"Do you play any instruments?", keywords:["practice","skill"]},
+    {q:"Is music important in your culture?", keywords:["tradition","event"]}
+  ]},
+  {topic:"Exercise", qs:[
+    {q:"How often do you exercise?", keywords:["frequency","routine"]},
+    {q:"What kind of exercise do you enjoy?", keywords:["running","gym"]},
+    {q:"Is it easy to keep fit where you live?", keywords:["facilities","space"]},
+    {q:"Do you prefer exercising alone or with others?", keywords:["motivation","group"]},
+    {q:"How do you stay motivated to exercise?", keywords:["goal","habit"]}
+  ]},
+  {topic:"Weather/Seasons", qs:[
+    {q:"What‘s the weather like where you live?", keywords:["climate","temperature"]},
+    {q:"Which season do you prefer and why?", keywords:["summer","winter"]},
+    {q:"How does weather affect your mood?", keywords:["energy","comfort"]},
+    {q:"Do you have any seasonal activities?", keywords:["holiday","outdoor"]},
+    {q:"Have you noticed effects of climate change?", keywords:["storms","temperature"]}
+  ]},
+  {topic:"Friends", qs:[
+    {q:"How do you meet new people?", keywords:["social","network"]},
+    {q:"What qualities do you value in a friend?", keywords:["trust","support"]},
+    {q:"Do you keep in touch with childhood friends?", keywords:["contact","distance"]},
+    {q:"Do you prefer a few close friends or many acquaintances?", keywords:["quality","quantity"]},
+    {q:"How do you resolve conflicts with friends?", keywords:["communication","compromise"]}
+  ]},
+  {topic:"Learning languages", qs:[
+    {q:"Why are you learning English?", keywords:["career","communication"]},
+    {q:"What is most challenging about English?", keywords:["grammar","vocabulary"]},
+    {q:"How do you practise speaking?", keywords:["conversation","partner"]},
+    {q:"What is your next language goal?", keywords:["fluency","exam"]},
+    {q:"Do you like learning other languages?", keywords:["culture","interest"]}
+  ]},
+  {topic:"Movies/TV", qs:[
+    {q:"What film or series do you enjoy?", keywords:["genre","plot"]},
+    {q:"Do you prefer cinema or streaming?", keywords:["screen","experience"]},
+    {q:"Who is your favourite actor or director?", keywords:["actor","director"]},
+    {q:"Has TV influenced your ideas about other countries?", keywords:["media","impression"]},
+    {q:"What was a recent film that impressed you?", keywords:["story","production"]}
+  ]},
+  {topic:"Shopping", qs:[
+    {q:"Do you shop online or in stores?", keywords:["online","offline"]},
+    {q:"What do you usually buy?", keywords:["clothes","gadgets"]},
+    {q:"Do you plan purchases or buy spontaneously?", keywords:["budget","impulse"]},
+    {q:"Is shopping a hobby for you?", keywords:["interest","time"]},
+    {q:"Are there cultural shopping habits in your country?", keywords:["tradition","market"]}
+  ]},
+  {topic:"Hobbies", qs:[
+    {q:"What hobbies do you have?", keywords:["interest","time"]},
+    {q:"Have you tried a new hobby recently?", keywords:["learn","practice"]},
+    {q:"Do you prefer hobbies alone or in groups?", keywords:["solitude","community"]},
+    {q:"What skills have you gained from hobbies?", keywords:["patience","creativity"]},
+    {q:"Which hobby would you recommend to others?", keywords:["benefit","enjoyment"]}
+  ]},
+  {topic:"Environment", qs:[
+    {q:"What environmental issues worry you?", keywords:["pollution","deforestation"]},
+    {q:"Do you do anything to help the environment?", keywords:["recycle","conserve"]},
+    {q:"Are there local environmental initiatives?", keywords:["project","community"]},
+    {q:"How can people be encouraged to act sustainably?", keywords:["education","incentive"]},
+    {q:"Is the government doing enough?", keywords:["policy","funding"]}
+  ]},
+  {topic:"Sports", qs:[
+    {q:"Which sport do you prefer?", keywords:["football","tennis"]},
+    {q:"Do you play or watch sports?", keywords:["participate","spectate"]},
+    {q:"What is the role of sport in society?", keywords:["health","unity"]},
+    {q:"Have you attended major sporting events?", keywords:["stadium","tournament"]},
+    {q:"Who is a sports role model to you?", keywords:["athlete","achievement"]}
+  ]},
+  {topic:"Culture", qs:[
+    {q:"Do you celebrate cultural traditions?", keywords:["festival","custom"]},
+    {q:"How important is cultural heritage?", keywords:["history","identity"]},
+    {q:"Have you experienced cultural exchange?", keywords:["travel","study"]},
+    {q:"Has culture changed in your country?", keywords:["modernization","influence"]},
+    {q:"How do arts contribute to culture?", keywords:["music","theatre"]}
+  ]},
+  {topic:"Social media", qs:[
+    {q:"Which social platforms do you use?", keywords:["app","network"]},
+    {q:"What are positives of social media?", keywords:["connection","information"]},
+    {q:"What are negatives?", keywords:["addiction","privacy"]},
+    {q:"Does social media affect relationships?", keywords:["communication","time"]},
+    {q:"Do you follow influencers?", keywords:["trend","opinion"]}
+  ]},
+  {topic:"Health", qs:[
+    {q:"What does a healthy lifestyle mean to you?", keywords:["diet","exercise"]},
+    {q:"How do you manage stress?", keywords:["rest","technique"]},
+    {q:"How accessible is healthcare where you live?", keywords:["service","cost"]},
+    {q:"Do you think mental health is well understood?", keywords:["stigma","support"]},
+    {q:"Are you following any health trends?", keywords:["fitness","diet"]}
+  ]}
+];
+
+// Part 2 — 18+ topics (cue cards, 4 bullets each)
+const PART2 = [
+  {topic:"A piece of technology that improved your life", bullets:[
+    {point:"What it is and how you got it", keywords:["device","purchase"]},
+    {point:"How you use it in daily life", keywords:["routine","function"]},
+    {point:"Why it is important to you", keywords:["convenience","efficiency"]},
+    {point:"How it has changed the way you do things", keywords:["habit","workflow"]}
+  ]},
+  {topic:"A person who taught you something valuable", bullets:[
+    {point:"Who the person is", keywords:["mentor","relative"]},
+    {point:"What they taught you", keywords:["skill","lesson"]},
+    {point:"When and where it happened", keywords:["occasion","context"]},
+    {point:"Why the lesson matters to you", keywords:["impact","growth"]}
+  ]},
+  {topic:"A place in your city you recommend to visitors", bullets:[
+    {point:"Where it is and what it's like", keywords:["location","atmosphere"]},
+    {point:"What visitors can do there", keywords:["activities","sights"]},
+    {point:"When is best to visit", keywords:["season","time"]},
+    {point:"Why you recommend it", keywords:["unique","appeal"]}
+  ]},
+  {topic:"A hobby you started recently", bullets:[
+    {point:"How you became interested", keywords:["inspiration","friend"]},
+    {point:"What equipment or skills are required", keywords:["tools","practice"]},
+    {point:"How often you do it", keywords:["frequency","routine"]},
+    {point:"How it makes you feel", keywords:["relaxation","satisfaction"]}
+  ]},
+  {topic:"An environmental problem in your area", bullets:[
+    {point:"What the problem is", keywords:["pollution","waste"]},
+    {point:"How it affects people", keywords:["health","economy"]},
+    {point:"What is being done to solve it", keywords:["initiative","policy"]},
+    {point:"What individuals can do", keywords:["reduce","volunteer"]}
+  ]},
+  {topic:"A memorable trip", bullets:[
+    {point:"Where you went and with whom", keywords:["destination","companions"]},
+    {point:"What you did there", keywords:["activities","sights"]},
+    {point:"What surprised you", keywords:["culture","unexpected"]},
+    {point:"Why it was unforgettable", keywords:["memory","emotion"]}
+  ]},
+  {topic:"A book/film that made you think", bullets:[
+    {point:"What it is about", keywords:["plot","theme"]},
+    {point:"Why it stood out to you", keywords:["message","style"]},
+    {point:"How others reacted to it", keywords:["reviews","discussion"]},
+    {point:"What you learned from it", keywords:["insight","perspective"]}
+  ]},
+  {topic:"A challenging decision you had to make", bullets:[
+    {point:"What the decision was", keywords:["choice","options"]},
+    {point:"What options you considered", keywords:["pros","cons"]},
+    {point:"What you chose and why", keywords:["reason","outcome"]},
+    {point:"How you felt afterwards", keywords:["relief","regret"]}
+  ]},
+  {topic:"A useful skill you want to learn", bullets:[
+    {point:"What the skill is", keywords:["ability","technique"]},
+    {point:"Why it interests you", keywords:["motivation","benefit"]},
+    {point:"How you plan to learn it", keywords:["course","practice"]},
+    {point:"How it could help you in future", keywords:["career","life"]}
+  ]},
+  {topic:"A tradition or festival in your culture", bullets:[
+    {point:"What it is and when it happens", keywords:["event","date"]},
+    {point:"How people celebrate it", keywords:["food","rituals"]},
+    {point:"What it means to you", keywords:["identity","family"]},
+    {point:"How it has changed", keywords:["modernization","influence"]}
+  ]},
+  // +7 extra topics (user asked to add more)
+  {topic:"A book that influenced you", bullets:[
+    {point:"Title and author", keywords:["book","writer"]},
+    {point:"Plot or main idea", keywords:["theme","message"]},
+    {point:"Why it affected you", keywords:["emotion","insight"]},
+    {point:"Would you recommend it?", keywords:["appeal","audience"]}
+  ]},
+  {topic:"A festival you attended", bullets:[
+    {point:"Name and place of festival", keywords:["event","location"]},
+    {point:"Main activities", keywords:["music","food"]},
+    {point:"People you met", keywords:["friends","community"]},
+    {point:"Your overall impression", keywords:["atmosphere","memory"]}
+  ]},
+  {topic:"A challenge you overcame", bullets:[
+    {point:"What the challenge was", keywords:["obstacle","difficulty"]},
+    {point:"How you approached it", keywords:["strategy","effort"]},
+    {point:"What helped you succeed", keywords:["support","skill"]},
+    {point:"What you learned", keywords:["growth","lesson"]}
+  ]},
+  {topic:"A piece of art you like", bullets:[
+    {point:"What it is and who created it", keywords:["painting","artist"]},
+    {point:"Describe it briefly", keywords:["style","colour"]},
+    {point:"Why it appeals to you", keywords:["emotion","meaning"]},
+    {point:"How it affected your thinking", keywords:["inspiration","reflection"]}
+  ]},
+  {topic:"A historical event you remember", bullets:[
+    {point:"What happened and when", keywords:["event","date"]},
+    {point:"Key people involved", keywords:["leaders","figures"]},
+    {point:"Why it was important", keywords:["impact","change"]},
+    {point:"How it is remembered today", keywords:["memorial","lesson"]}
+  ]},
+  {topic:"A future project you would like to do", bullets:[
+    {point:"What the project is", keywords:["plan","goal"]},
+    {point:"Why you want to do it", keywords:["motivation","benefit"]},
+    {point:"How you would prepare", keywords:["research","resources"]},
+    {point:"When you might start", keywords:["timeline","commitment"]}
+  ]},
+  {topic:"An unusual food you tried", bullets:[
+    {point:"What the food was", keywords:["dish","ingredient"]},
+    {point:"Where and when you tried it", keywords:["place","occasion"]},
+    {point:"How it tasted", keywords:["flavour","texture"]},
+    {point:"Would you try it again?", keywords:["preference","experience"]}
+  ]}
+];
+
+// Part 3 — 18+ topics (each with 5 questions)
+const PART3 = [
+  {topic:"Technology", qs:[
+    {q:"Do technological advances always improve people's quality of life?", keywords:["advances","quality"]},
+    {q:"How has automation changed work?", keywords:["automation","jobs"]},
+    {q:"What responsibilities do tech companies have?", keywords:["ethics","regulation"]},
+    {q:"Should governments regulate social media?", keywords:["policy","safety"]},
+    {q:"Will AI have more benefits or risks?", keywords:["benefit","risk"]}
+  ]},
+  {topic:"Education", qs:[
+    {q:"How important are soft skills compared to academic knowledge?", keywords:["skills","knowledge"]},
+    {q:"Should schools prioritise creativity over standardised tests?", keywords:["creativity","assessment"]},
+    {q:"What is the role of technology in classrooms?", keywords:["access","tools"]},
+    {q:"How can adults continue to learn effectively?", keywords:["motivation","resources"]},
+    {q:"Should universities be more practical and job-focused?", keywords:["vocational","curriculum"]}
+  ]},
+  {topic:"Environment", qs:[
+    {q:"What causes the most pollution in cities?", keywords:["traffic","industry"]},
+    {q:"Should the public pay higher taxes for green transport?", keywords:["tax","transport"]},
+    {q:"How can individuals be encouraged to live sustainably?", keywords:["incentive","education"]},
+    {q:"Is climate education important in schools?", keywords:["school","awareness"]},
+    {q:"Will small individual actions matter globally?", keywords:["scale","impact"]}
+  ]},
+  {topic:"Culture & Media", qs:[
+    {q:"How does streaming affect local culture and artists?", keywords:["streaming","local"]},
+    {q:"Should governments fund the arts?", keywords:["funding","policy"]},
+    {q:"Do celebrities influence young people too much?", keywords:["influence","role-models"]},
+    {q:"Can art change public opinion?", keywords:["persuade","emotion"]},
+    {q:"Is cultural heritage being preserved enough?", keywords:["heritage","conservation"]}
+  ]},
+  {topic:"Work & Careers", qs:[
+    {q:"What skills will be valuable in the future job market?", keywords:["digital","soft-skills"]},
+    {q:"Is remote work good for long-term productivity?", keywords:["remote","productivity"]},
+    {q:"Should companies offer a four-day working week?", keywords:["weekend","balance"]},
+    {q:"How can different generations collaborate?", keywords:["mentorship","respect"]},
+    {q:"What makes a job satisfying?", keywords:["purpose","salary"]}
+  ]},
+  {topic:"Travel & Tourism", qs:[
+    {q:"What are pros and cons of mass tourism?", keywords:["economy","overcrowding"]},
+    {q:"Should popular destinations limit visitor numbers?", keywords:["cap","preservation"]},
+    {q:"How do cultural differences affect travel?", keywords:["etiquette","expectation"]},
+    {q:"Will virtual tourism ever replace real travel?", keywords:["virtual","experience"]},
+    {q:"How can tourism be more sustainable?", keywords:["eco","policy"]}
+  ]},
+  {topic:"Society & Values", qs:[
+    {q:"How are family roles changing in your country?", keywords:["roles","gender"]},
+    {q:"Do people have less time for community life today?", keywords:["time","community"]},
+    {q:"What are advantages of living alone?", keywords:["independence","privacy"]},
+    {q:"How important is work-life balance?", keywords:["balance","health"]},
+    {q:"Should the state support families more?", keywords:["welfare","policy"]}
+  ]},
+  // +7 extra Part 3 topics
+  {topic:"Sports", qs:[
+    {q:"Should schools encourage more sports?", keywords:["education","health"]},
+    {q:"Do professional athletes have social responsibilities?", keywords:["role-model","influence"]},
+    {q:"How do big sports events affect the economy?", keywords:["tourism","business"]},
+    {q:"Are traditional sports losing popularity?", keywords:["trend","modern"]},
+    {q:"How can sport promote social cohesion?", keywords:["community","inclusion"]}
+  ]},
+  {topic:"Books & Reading", qs:[
+    {q:"Will digital books replace printed ones?", keywords:["digital","print"]},
+    {q:"Why is literature still important?", keywords:["culture","empathy"]},
+    {q:"How do reading habits change with technology?", keywords:["audio","screen"]},
+    {q:"Can books influence political views?", keywords:["ideas","debate"]},
+    {q:"How to encourage reading among youth?", keywords:["program","school"]}
+  ]},
+  {topic:"Environment Action", qs:[
+    {q:"Are governmental actions enough to fight climate change?", keywords:["policy","funding"]},
+    {q:"What role do corporations play?", keywords:["business","responsibility"]},
+    {q:"Should there be penalties for polluters?", keywords:["fines","enforcement"]},
+    {q:"How effective are grassroots movements?", keywords:["community","change"]},
+    {q:"Is individual lifestyle change realistic?", keywords:["habit","cost"]}
+  ]},
+  {topic:"Festivals & Traditions", qs:[
+    {q:"Why are traditions important?", keywords:["identity","history"]},
+    {q:"Do modern festivals lose original meaning?", keywords:["commercial","authentic"]},
+    {q:"Should governments promote cultural festivals?", keywords:["tourism","policy"]},
+    {q:"Do international festivals help local artists?", keywords:["exposure","support"]},
+    {q:"How can traditions adapt to younger generations?", keywords:["change","innovation"]}
+  ]}
+];
+
+// Functional language & grammar pools
+const FUNC_LANG = [
+  "From my perspective", "It seems to me that", "I tend to think that", "To a large extent",
+  "It boils down to", "On balance", "What really stands out is", "Be that as it may",
+  "Strike a balance between A and B", "In the grand scheme of things", "It's worth noting that", "To some extent"
+];
+
+const GRAMMAR = [
+  "If I had..., I would...", "Had I known..., I would have...", "Not only ... but also ...",
+  "On no account should...", "It was not until ... that ...", "While ..., ...",
+  "The more ..., the more ...", "Were I to..., I would...", "No sooner had ... than ...", "…, thereby + -ing …"
+];
+
+// ---------------- rendering ----------------
+function renderPart1(){
+  const topic = PART1[rnd(PART1.length)];
+  const questions = pickMany(topic.qs, 5);
+  const html = questions.map(it=>`<li class="q">${it.q} <span class="muted">(${it.keywords.join(", ")})</span></li>`).join("");
+  $("#part1").innerHTML = `<div class="muted"><span class="pill">${topic.topic}</span></div><ul class="list">${html}</ul>`;
+}
+
+function renderPart2(){
+  const topic = PART2[rnd(PART2.length)];
+  const html = topic.bullets.map(b=>`<li class="q">${b.point} <span class="muted">(${b.keywords.join(", ")})</span></li>`).join("");
+  $("#part2").innerHTML = `<div><span class="pill">${topic.topic}</span></div><ul class="list">${html}</ul>`;
+}
+
+function renderPart3(){
+  const topic = PART3[rnd(PART3.length)];
+  const questions = pickMany(topic.qs,5);
+  const html = questions.map(it=>`<li class="q">${it.q} <span class="muted">(${it.keywords.join(", ")})</span></li>`).join("");
+  $("#part3").innerHTML = `<div class="muted"><span class="pill">${topic.topic}</span></div><ul class="list">${html}</ul>`;
+}
+
+function renderFuncLang(){
+  $("#funcLang").innerHTML = `<ul class="list">${pickMany(FUNC_LANG,6).map(x=>`<li class="q">${x}</li>`).join("")}</ul>`;
+}
+function renderGrammar(){
+  $("#grammarChunks").innerHTML = `<ul class="list">${pickMany(GRAMMAR,6).map(x=>`<li class="q">${x}</li>`).join("")}</ul>`;
+}
+
+// ---------------- Timer (Part 2) ----------------
+let prepSeconds = 60, talkSeconds = 120;
+let timerId = null, timerPhase = null; // 'prep' or 'talk'
+function formatTime(s){ if(s<0) s=0; const m=Math.floor(s/60).toString().padStart(2,'0'); const ss=(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
+
+function startPrep(){
+  clearInterval(timerId);
+  timerPhase = 'prep';
+  let t = prepSeconds;
+  $("#timerDisplay").textContent = `Prep: ${formatTime(t)}`;
+  timerId = setInterval(()=>{
+    t--;
+    $("#timerDisplay").textContent = `Prep: ${formatTime(t)}`;
+    if(t < 0){ clearInterval(timerId); playBeep(); startTalk(); }
+  },1000);
+}
+
+function startTalk(){
+  clearInterval(timerId);
+  timerPhase = 'talk';
+  let t = talkSeconds;
+  $("#timerDisplay").textContent = `Talk: ${formatTime(t)}`;
+  timerId = setInterval(()=>{
+    t--;
+    $("#timerDisplay").textContent = `Talk: ${formatTime(t)}`;
+    if(t < 0){ clearInterval(timerId); playBeep(); $("#timerDisplay").textContent = "Time's up!"; }
+  },1000);
+}
+
+function resetTimer(){
+  clearInterval(timerId);
+  timerPhase = null;
+  $("#timerDisplay").textContent = "—:—";
+}
+
+function playBeep(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(1000, ctx.currentTime);
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
+    o.stop(ctx.currentTime + 0.45);
+  }catch(e){ /* ignore audio errors on some browsers */ }
+}
+
+// ---------------- New Set & UI ----------------
+function newSet(){
+  renderPart1();
+  renderPart2();
+  renderPart3();
+  renderFuncLang();
+  renderGrammar();
+  resetTimer();
+  // hide hints if examMode
+  const exam = $("#examMode").checked;
+  $("#p1hint").classList.toggle("hidden", exam);
+  $("#p2hint").classList.toggle("hidden", exam);
+  $("#p3hint").classList.toggle("hidden", exam);
+}
+
+$("#newSetBtn").addEventListener("click", newSet);
+$("#startPrep").addEventListener("click", startPrep);
+$("#startTalk").addEventListener("click", startTalk);
+$("#resetTimer").addEventListener("click", resetTimer);
+$("#copyBtn").addEventListener("click", ()=>{
+  const text = [
+    "IELTS Speaking Set",
+    "Part 1:",
+    $("#part1").innerText.trim(),
+    "",
+    "Part 2:",
+    $("#part2").innerText.trim(),
+    "",
+    "Part 3:",
+    $("#part3").innerText.trim(),
+    "",
+    "Functional language:",
+    $("#funcLang").innerText.trim(),
+    "",
+    "Grammar chunks:",
+    $("#grammarChunks").innerText.trim()
+  ].join("\n");
+  navigator.clipboard.writeText(text).then(()=>{
+    const old = $("#copyBtn").textContent;
+    $("#copyBtn").textContent = "✅ Copied!";
+    setTimeout(()=>$("#copyBtn").textContent = old,1200);
+  });
+});
+$("#printBtn").addEventListener("click", ()=>window.print());
+
+// initial
+newSet();
+</script>
+</body>
+</html>
